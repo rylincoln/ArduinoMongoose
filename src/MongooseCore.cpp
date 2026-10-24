@@ -85,6 +85,15 @@ void MongooseCore::ipConfigChanged()
     if(IPAddress(0, 0, 0, 0) == dns[i]) {
       continue;
     }
+#if defined(ESP32) && ESP_ARDUINO_VERSION_MAJOR >= 3
+    // An IPv6 resolver (e.g. from a router's RDNSS) would be formatted as
+    // "udp://fd00::1:53", which Mongoose parses as host "fd00" and then tries
+    // to resolve through the resolver itself, recursing until the stack dies.
+    // Use IPv4 resolvers only.
+    if(IPv4 != dns[i].type()) {
+      continue;
+    }
+#endif
     // Drop duplicates against everything kept so far, not just the first:
     // an interface reporting the same resolver in two slots would otherwise
     // get a "failover" that lands straight back on the server that timed out.
